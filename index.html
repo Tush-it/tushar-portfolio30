@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tushar Bhardwaj | The Architect</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Bebas+Neue&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-deep: #000000;
+            --accent: #D90429; /* Deep Silicon Valley Red */
+            --glass-bg: rgba(10, 10, 10, 0.8);
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body { 
+            font-family: 'Space Grotesk', sans-serif; 
+            background-color: var(--bg-deep); 
+            color: #ffffff; 
+            overflow-x: hidden;
+            cursor: none;
+            opacity: 0;
+        }
+        
+        .cinematic-font { font-family: 'Bebas Neue', sans-serif; letter-spacing: 2px; }
+        .code-font { font-family: 'JetBrains Mono', monospace; }
+
+        /* --- STARFIELD CANVAS --- */
+        #star-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; pointer-events: none;
+        }
+
+        /* --- NETFLIX LOADER --- */
+        #loader-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 99999;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .loader-track { width: 100%; height: 2px; background: #111; position: relative; }
+        .loader-bar { height: 100%; width: 0%; background: var(--accent); box-shadow: 0 0 40px var(--accent); }
+
+        /* --- 3D TAGLINE BOX --- */
+        .glass-pill-3d {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 9999px;
+            padding: 12px 30px;
+            box-shadow: 
+                0 4px 6px rgba(0,0,0,0.5), 
+                inset 0 1px 0 rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+        .glass-pill-3d:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent);
+            box-shadow: 0 10px 20px rgba(217, 4, 41, 0.2);
+        }
+
+        /* --- VIBRATING HERO NAME --- */
+        .hero-name {
+            transition: color 0.1s ease;
+            background: linear-gradient(180deg, #fff, #999);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-name:hover {
+            -webkit-text-fill-color: var(--accent);
+            text-shadow: 0 0 50px var(--accent);
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both infinite;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(3px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-5px, 0, 0); }
+            40%, 60% { transform: translate3d(5px, 0, 0); }
+        }
+
+        /* --- HERO IMAGE --- */
+        .hero-border {
+            border: 4px solid var(--accent);
+            box-shadow: 0 0 60px rgba(217, 4, 41, 0.3);
+            border-radius: 24px;
+            transition: all 0.3s ease;
+        }
+        .hero-border:hover { box-shadow: 0 0 100px rgba(217, 4, 41, 0.6); transform: scale(1.01); }
+
+        /* --- 3D BUTTONS --- */
+        .btn-3d {
+            background-color: var(--accent); color: white; font-weight: 800;
+            padding: 14px 32px; border-radius: 9999px; 
+            box-shadow: 0 6px 0 #8D0801, 0 10px 20px rgba(0,0,0,0.4);
+            transition: all 0.1s ease;
+        }
+        .btn-3d:active { transform: translateY(4px); box-shadow: 0 2px 0 #8D0801; }
+
+        .btn-3d-white {
+            background-color: white; color: black; font-weight: 800;
+            padding: 14px 32px; border-radius: 9999px;
+            box-shadow: 0 6px 0 #999, 0 10px 20px rgba(0,0,0,0.4);
+            transition: all 0.1s ease;
+        }
+        .btn-3d-white:active { transform: translateY(4px); box-shadow: 0 2px 0 #999; }
+
+        /* --- BROADCAST CARDS --- */
+        .broadcast-card {
+            background: var(--glass-bg); border: 1px solid var(--border-color);
+            border-radius: 16px; overflow: hidden; transition: all 0.4s ease;
+        }
+        .broadcast-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 20px 80px -20px rgba(217, 4, 41, 0.2);
+            transform: translateY(-8px);
+        }
+
+        /* --- CURSOR --- */
+        .cursor-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; position: fixed; pointer-events: none; z-index: 10000; }
+        .cursor-circle { width: 40px; height: 40px; border: 1px solid var(--accent); border-radius: 50%; position: fixed; pointer-events: none; z-index: 9999; transition: all 0.1s ease-out; }
+
+        /* --- UTILS --- */
+        .render-4k { image-rendering: -webkit-optimize-contrast; transform: translateZ(0); filter: contrast(1.1) brightness(1.05); }
+        .grey-code { background-color: #0a0a0a; color: #d4d4d4; border-left: 4px solid #444; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.6; min-height: 400px; }
+        .chart-circle { stroke-dasharray: 251; stroke-dashoffset: 251; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset 1.5s ease-out; }
+        .flow-cloud { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 9999px; padding: 12px 24px; text-align: center; font-size: 0.75rem; font-weight: bold; letter-spacing: 0.1em; position: relative; }
+        .flow-cloud::after { content: '↓'; position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%); color: var(--accent); font-size: 1.2rem; }
+        .flow-cloud:last-child::after { display: none; }
+        
+        /* --- TICKER --- */
+        .skills-track { display: flex; width: 200%; animation: scrollText 25s linear infinite; }
+        .skill-item { font-size: 3rem; font-family: 'Bebas Neue', sans-serif; color: #333; margin-right: 4rem; white-space: nowrap; transition: color 0.3s; }
+        .skill-item:hover { color: #fff; }
+        @keyframes scrollText { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        
+        .footer-watermark { position: absolute; bottom: -50px; right: -50px; width: 400px; height: 400px; opacity: 0.05; pointer-events: none; transform: rotate(-15deg); }
+    </style>
+</head>
+<body class="antialiased selection:bg-[#D90429] selection:text-white">
+
+    <canvas id="star-canvas"></canvas>
+
+    <div id="loader-screen">
+        <div class="loader-track"><div class="loader-bar" id="loader-bar"></div></div>
+    </div>
+
+    <audio id="race-sound" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"></audio>
+    <div class="cursor-dot" id="cursor-dot"></div>
+    <div class="cursor-circle" id="cursor-circle"></div>
+
+    <nav class="fixed w-full z-50 bg-black/80 backdrop-blur-xl border-b border-white/10 -translate-y-full" id="navbar">
+        <div class="max-w-[1600px] mx-auto px-8 py-4 flex justify-between items-center">
+            <div class="text-3xl cinematic-font tracking-widest cursor-pointer hover:text-[#D90429] transition-colors" onclick="window.scrollTo(0,0)">
+                TUSHAR<span class="text-[#D90429]">.</span>DEV
+            </div>
+            
+            <div class="hidden md:block w-1/3 overflow-hidden border-x border-white/10 mx-4">
+                <div class="flex whitespace-nowrap overflow-hidden">
+                    <div class="animate-[ticker_20s_linear_infinite] inline-block text-[#D90429] text-xs font-bold tracking-widest px-4">
+                        SILICON VALLEY ARCHITECTURE /// SYSTEM ONLINE /// 4K VISUALS /// DEPLOYMENT READY
+                    </div>
+                </div>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-10 text-xs font-bold tracking-[0.2em] text-gray-400 uppercase">
+                <a href="#work" class="hover:text-white transition-all">Projects</a>
+                <a href="#about" class="hover:text-white transition-all">Vision</a>
+                <a href="tel:+917982797030" class="btn-3d text-[10px]">HIRE ME</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="relative min-h-screen flex items-center pt-24 px-6 overflow-hidden">
+        <div class="max-w-[1600px] mx-auto w-full grid md:grid-cols-2 gap-16 items-center">
+            
+            <div class="relative z-20 opacity-0 translate-y-10" id="hero-text">
+                <div class="glass-pill-3d mb-8">
+                    <span class="text-[#D90429] text-xs font-bold tracking-[0.3em]">DATA SCIENTIST & DEVELOPER</span>
+                </div>
+                
+                <h1 class="text-[5rem] lg:text-[9rem] leading-[0.85] cinematic-font italic mb-8 hero-name cursor-pointer" onmouseenter="playRaceSound()">
+                    TUSHAR<br>BHARDWAJ
+                </h1>
+                
+                <p class="text-gray-400 text-lg md:text-xl font-light leading-relaxed max-w-lg mb-10 pl-6 border-l-4 border-[#D90429]">
+                    Deploying military-grade data systems and cinematic web experiences. 
+                    <br><span class="text-white font-bold">Precision. Speed. Scale.</span>
+                </p>
+                <div class="flex gap-6 pb-10">
+                    <button onclick="document.getElementById('work').scrollIntoView()" class="btn-3d-white text-xs">View Projects</button>
+                    <a href="https://wa.me/917982797030" target="_blank" class="btn-3d text-xs flex items-center gap-2">WhatsApp API</a>
+                </div>
+            </div>
+
+            <div class="relative h-full flex justify-center md:justify-end items-end pb-10 opacity-0 translate-x-10" id="hero-img">
+                <div class="relative group">
+                    <div class="absolute -inset-4 bg-[#D90429] blur-3xl opacity-20 rounded-[30px]"></div>
+                    <div class="hero-border p-1 bg-black relative z-10">
+                        <img src="https://i.postimg.cc/zHLxXVpg/1000116193.webp" alt="Tushar Bhardwaj" class="w-full max-w-[800px] h-auto object-cover rounded-[20px] render-4k grayscale-0">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section id="skills" class="py-12 bg-black border-y border-white/10 overflow-hidden relative z-20">
+        <div class="skills-track">
+            <div class="skill-item">PYTHON</div><div class="skill-item">SQL</div><div class="skill-item">REACT.JS</div><div class="skill-item">DATA SCIENCE</div><div class="skill-item">MACHINE LEARNING</div><div class="skill-item">APPS SCRIPT</div><div class="skill-item">WEBGL</div><div class="skill-item">AI AGENTS</div>
+            <div class="skill-item">PYTHON</div><div class="skill-item">SQL</div><div class="skill-item">REACT.JS</div><div class="skill-item">DATA SCIENCE</div><div class="skill-item">MACHINE LEARNING</div><div class="skill-item">APPS SCRIPT</div><div class="skill-item">WEBGL</div><div class="skill-item">AI AGENTS</div>
+        </div>
+    </section>
+
+    <section id="work" class="py-32 px-6 relative z-10">
+        <div class="max-w-[1600px] mx-auto">
+            <h2 class="text-[5rem] cinematic-font text-white mb-20">MISSION <span class="text-[#D90429]">LOGS</span></h2>
+            <div class="flex flex-col gap-32">
+                <div class="broadcast-card w-full grid md:grid-cols-12 group min-h-[500px]">
+                    <div class="md:col-span-7 relative overflow-hidden border-r border-white/10">
+                        <div onclick="openModal(0)" class="absolute inset-0 z-20 flex items-center justify-center cursor-pointer bg-black/30 hover:bg-black/50 transition-all">
+                            <div class="w-24 h-24 rounded-full border-2 border-[#D90429] flex items-center justify-center bg-black/60 backdrop-blur hover:scale-110 transition-transform">
+                                <svg class="w-10 h-10 text-[#D90429] ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            </div>
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=1600&auto=format&fit=crop" class="w-full h-full object-cover render-4k grayscale group-hover:grayscale-0 transition duration-700">
+                    </div>
+                    <div class="md:col-span-5 p-10 flex flex-col justify-center relative bg-gradient-to-l from-white/5 to-transparent">
+                        <div class="text-[#D90429] text-xs font-bold tracking-[0.3em] mb-4">DATA SCIENCE</div>
+                        <h3 class="text-5xl cinematic-font text-white mb-6">FinAI Pro</h3>
+                        <ul class="text-gray-400 text-sm space-y-3 mb-8 border-l-2 border-[#D90429] pl-4"><li>Real-time Stock API Integration</li><li>Machine Learning Forecasting</li><li>Interactive Dashboard</li></ul>
+                    </div>
+                </div>
+                <div class="broadcast-card w-full grid md:grid-cols-12 group min-h-[500px]">
+                    <div class="md:col-span-5 p-10 flex flex-col justify-center relative bg-gradient-to-r from-white/5 to-transparent md:order-1">
+                        <div class="text-[#D90429] text-xs font-bold tracking-[0.3em] mb-4">AUTOMATION</div>
+                        <h3 class="text-5xl cinematic-font text-white mb-6">Ultimate IMS</h3>
+                        <ul class="text-gray-400 text-sm space-y-3 mb-8 border-l-2 border-[#D90429] pl-4"><li>Google Apps Script Backend</li><li>Automated Inventory Alerts</li><li>Dynamic Purchase Orders</li></ul>
+                    </div>
+                    <div class="md:col-span-7 relative overflow-hidden border-l border-white/10 md:order-2">
+                        <div onclick="openModal(1)" class="absolute inset-0 z-20 flex items-center justify-center cursor-pointer bg-black/30 hover:bg-black/50 transition-all">
+                            <div class="w-24 h-24 rounded-full border-2 border-[#D90429] flex items-center justify-center bg-black/60 backdrop-blur hover:scale-110 transition-transform">
+                                <svg class="w-10 h-10 text-[#D90429] ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            </div>
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1600&auto=format&fit=crop" class="w-full h-full object-cover render-4k grayscale group-hover:grayscale-0 transition duration-700">
+                    </div>
+                </div>
+                <div class="broadcast-card w-full grid md:grid-cols-12 group min-h-[500px]">
+                    <div class="md:col-span-7 relative overflow-hidden border-r border-white/10">
+                        <div onclick="openModal(2)" class="absolute inset-0 z-20 flex items-center justify-center cursor-pointer bg-black/30 hover:bg-black/50 transition-all">
+                            <div class="w-24 h-24 rounded-full border-2 border-[#D90429] flex items-center justify-center bg-black/60 backdrop-blur hover:scale-110 transition-transform">
+                                <svg class="w-10 h-10 text-[#D90429] ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            </div>
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1633356122544-f134324a6cee?q=80&w=1600&auto=format&fit=crop" class="w-full h-full object-cover render-4k grayscale group-hover:grayscale-0 transition duration-700">
+                    </div>
+                    <div class="md:col-span-5 p-10 flex flex-col justify-center relative bg-gradient-to-l from-white/5 to-transparent">
+                        <div class="text-[#D90429] text-xs font-bold tracking-[0.3em] mb-4">WEB DESIGN</div>
+                        <h3 class="text-5xl cinematic-font text-white mb-6">Cinematic 3D Web</h3>
+                        <ul class="text-gray-400 text-sm space-y-3 mb-8 border-l-2 border-[#D90429] pl-4"><li>WebGL 3D Rendering</li><li>Hardware Accelerated Parallax</li><li>Framer Motion Animations</li></ul>
+                    </div>
+                </div>
+                <div class="broadcast-card w-full grid md:grid-cols-12 group min-h-[500px]">
+                    <div class="md:col-span-5 p-10 flex flex-col justify-center relative bg-gradient-to-r from-white/5 to-transparent md:order-1">
+                        <div class="text-[#D90429] text-xs font-bold tracking-[0.3em] mb-4">AI & LOGIC</div>
+                        <h3 class="text-5xl cinematic-font text-white mb-6">Personal AI Agents</h3>
+                        <ul class="text-gray-400 text-sm space-y-3 mb-8 border-l-2 border-[#D90429] pl-4"><li>Custom LLM Context</li><li>Automated Scheduling</li><li>Context-Aware Memory</li></ul>
+                    </div>
+                    <div class="md:col-span-7 relative overflow-hidden border-l border-white/10 md:order-2">
+                        <div onclick="openModal(3)" class="absolute inset-0 z-20 flex items-center justify-center cursor-pointer bg-black/30 hover:bg-black/50 transition-all">
+                            <div class="w-24 h-24 rounded-full border-2 border-[#D90429] flex items-center justify-center bg-black/60 backdrop-blur hover:scale-110 transition-transform">
+                                <svg class="w-10 h-10 text-[#D90429] ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            </div>
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1677442136019-21780ecad995?q=80&w=1600&auto=format&fit=crop" class="w-full h-full object-cover render-4k grayscale group-hover:grayscale-0 transition duration-700">
+                    </div>
+                </div>
+                <div class="broadcast-card w-full grid md:grid-cols-12 group min-h-[500px]">
+                    <div class="md:col-span-7 relative overflow-hidden border-r border-white/10">
+                        <div onclick="openModal(4)" class="absolute inset-0 z-20 flex items-center justify-center cursor-pointer bg-black/30 hover:bg-black/50 transition-all">
+                            <div class="w-24 h-24 rounded-full border-2 border-[#D90429] flex items-center justify-center bg-black/60 backdrop-blur hover:scale-110 transition-transform">
+                                <svg class="w-10 h-10 text-[#D90429] ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            </div>
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1600&auto=format&fit=crop" class="w-full h-full object-cover render-4k grayscale group-hover:grayscale-0 transition duration-700">
+                    </div>
+                    <div class="md:col-span-5 p-10 flex flex-col justify-center relative bg-gradient-to-l from-white/5 to-transparent">
+                        <div class="text-[#D90429] text-xs font-bold tracking-[0.3em] mb-4">ANALYTICS</div>
+                        <h3 class="text-5xl cinematic-font text-white mb-6">Sales Predictor</h3>
+                        <ul class="text-gray-400 text-sm space-y-3 mb-8 border-l-2 border-[#D90429] pl-4"><li>Big Data Processing</li><li>Seasonal Trend Extrapolation</li><li>Inventory Forecasting</li></ul>
+                    </div>
+                </div>
+                <div class="broadcast-card w-full grid md:grid-cols-12 group min-h-[500px]">
+                    <div class="md:col-span-5 p-10 flex flex-col justify-center relative bg-gradient-to-r from-white/5 to-transparent md:order-1">
+                        <div class="text-[#D90429] text-xs font-bold tracking-[0.3em] mb-4">BUSINESS</div>
+                        <h3 class="text-5xl cinematic-font text-white mb-6">Automated Payroll</h3>
+                        <ul class="text-gray-400 text-sm space-y-3 mb-8 border-l-2 border-[#D90429] pl-4"><li>Employee Hour Tracking</li><li>Tax & Leave Calculation</li><li>Automated Payslips</li></ul>
+                    </div>
+                    <div class="md:col-span-7 relative overflow-hidden border-l border-white/10 md:order-2">
+                        <div onclick="openModal(5)" class="absolute inset-0 z-20 flex items-center justify-center cursor-pointer bg-black/30 hover:bg-black/50 transition-all">
+                            <div class="w-24 h-24 rounded-full border-2 border-[#D90429] flex items-center justify-center bg-black/60 backdrop-blur hover:scale-110 transition-transform">
+                                <svg class="w-10 h-10 text-[#D90429] ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            </div>
+                        </div>
+                        <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?q=80&w=1600&auto=format&fit=crop" class="w-full h-full object-cover render-4k grayscale group-hover:grayscale-0 transition duration-700">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="py-32 border-t border-white/5 relative z-10 bg-black/80 backdrop-blur">
+        <div class="max-w-[1600px] mx-auto px-6 grid md:grid-cols-2 gap-20 items-center">
+            <div class="relative group">
+                <div class="absolute -inset-2 bg-gradient-to-r from-[#D90429] to-purple-900 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-500"></div>
+                <img src="https://i.postimg.cc/6T9w5wdS/1000100648.webp" alt="Tushar Vision" class="relative z-10 rounded-xl render-4k w-full shadow-2xl">
+            </div>
+            <div>
+                <h2 class="text-5xl cinematic-font text-white mb-8">ENGINEERING DIGITAL SINGULARITY</h2>
+                <p class="text-gray-400 text-lg leading-relaxed mb-8">My work fuses rigorous data science with high-performance web development. I engineer systems that are not just functional, but cinematic, scalable, and intelligent.</p>
+                <div class="grid grid-cols-2 gap-8 border-t border-white/10 pt-8">
+                    <div><div class="text-5xl cinematic-font text-[#D90429]">Core Focus</div><div class="text-xs font-bold uppercase tracking-widest text-gray-500 mt-2">AI Systems</div></div>
+                    <div><div class="text-5xl cinematic-font text-[#D90429]">Status</div><div class="text-xs font-bold uppercase tracking-widest text-gray-500 mt-2">Operational</div></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div id="mission-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/95 backdrop-blur-xl" onclick="closeModal()"></div>
+        <div class="relative bg-[#050505] border border-[#D90429]/30 w-full max-w-[1400px] h-[85vh] rounded-2xl overflow-hidden flex flex-col shadow-[0_0_100px_rgba(217,4,41,0.15)]">
+            <div class="flex justify-between items-center p-6 border-b border-white/10 bg-black/50">
+                <div><span id="modal-tag" class="text-[#D90429] text-[10px] font-bold tracking-[0.3em] uppercase">SYSTEM</span><h2 id="modal-title" class="text-3xl cinematic-font text-white">PROJECT ALPHA</h2></div>
+                <button onclick="closeModal()" class="text-gray-500 hover:text-white transition">✕ ESC</button>
+            </div>
+            <div class="flex-1 grid grid-cols-3 divide-x divide-white/10 overflow-hidden">
+                <div class="p-8 bg-[#0a0a0a] overflow-y-auto">
+                    <h4 class="text-white text-xs font-bold tracking-widest uppercase mb-6 flex items-center gap-2"><div class="w-2 h-2 bg-[#D90429] rounded-full"></div> CORE LOGIC</h4>
+                    <div class="grey-code p-6 rounded-lg shadow-inner"><pre id="modal-code">Loading...</pre></div>
+                </div>
+                <div class="p-8 bg-[#0a0a0a] flex flex-col items-center justify-center relative">
+                    <h4 class="absolute top-6 left-6 text-white text-xs font-bold tracking-widest uppercase flex items-center gap-2"><div class="w-2 h-2 bg-blue-500 rounded-full"></div> WORKFLOW</h4>
+                    <div class="space-y-8 w-full max-w-xs flex flex-col items-center mt-8" id="flowchart-container"></div>
+                </div>
+                <div class="p-8 bg-[#0a0a0a] flex flex-col justify-center relative">
+                    <h4 class="absolute top-6 left-6 text-white text-xs font-bold tracking-widest uppercase flex items-center gap-2"><div class="w-2 h-2 bg-green-500 rounded-full"></div> LIVE ANALYTICS</h4>
+                    <div class="grid grid-cols-2 gap-8 items-center">
+                        <div class="flex flex-col items-center justify-center">
+                            <svg width="140" height="140" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="40" stroke="#333" stroke-width="8" fill="none"/>
+                                <circle id="chart-circle" class="chart-circle" cx="50" cy="50" r="40" stroke="#D90429" stroke-width="8" fill="none"/>
+                                <text id="chart-text" x="50" y="55" text-anchor="middle" fill="white" font-size="24" font-family="sans-serif" font-weight="bold">0%</text>
+                            </svg>
+                            <span class="text-[10px] text-gray-500 mt-4 uppercase tracking-widest">Efficiency</span>
+                        </div>
+                        <div class="flex items-end gap-2 h-40 pb-2 border-b border-white/20">
+                            <div class="w-full bg-[#D90429] h-[40%] opacity-50"></div>
+                            <div class="w-full bg-[#D90429] h-[70%] opacity-70"></div>
+                            <div class="w-full bg-[#D90429] h-[50%] opacity-60"></div>
+                            <div class="w-full bg-[#D90429] h-[95%] opacity-100"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="py-20 border-t border-white/5 bg-black text-center relative z-10 overflow-hidden">
+        <h2 class="text-3xl cinematic-font text-white mb-8">INITIATE CONTACT</h2>
+        <div class="flex justify-center gap-12 relative z-20">
+            <a href="https://wa.me/917982797030" target="_blank" class="text-white hover:text-[#25D366] font-bold tracking-widest text-sm transition-colors">WHATSAPP</a>
+            <a href="tel:+917982797030" class="text-white hover:text-[#D90429] font-bold tracking-widest text-sm transition-colors">CALL SYSTEM</a>
+        </div>
+        <p class="mt-12 text-[#444] text-xs font-bold tracking-[0.2em]">@ 2026 TUSHAR BHARDWAJ INC.</p>
+        <svg class="footer-watermark" viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="45" fill="#D90429"/><path d="M50 5 C 50 5, 50 95, 50 95" stroke="black" stroke-width="8"/><ellipse cx="32" cy="50" rx="12" ry="8" fill="white" transform="rotate(-15 32 50)"/><ellipse cx="68" cy="50" rx="12" ry="8" fill="white" transform="rotate(15 68 50)"/><circle cx="35" cy="50" r="3" fill="black"/><circle cx="65" cy="50" r="3" fill="black"/></svg>
+    </footer>
+
+    <script>
+        // STARFIELD
+        const canvas = document.getElementById('star-canvas');
+        if(canvas) {
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            let stars = [];
+            for(let i=0; i<200; i++) stars.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, z:Math.random()*2});
+            function animateStars() {
+                ctx.fillStyle = "black"; ctx.fillRect(0,0,canvas.width,canvas.height);
+                ctx.fillStyle = "white";
+                stars.forEach(s => {
+                    s.y += s.z; if(s.y>canvas.height) s.y=0;
+                    ctx.beginPath(); ctx.arc(s.x, s.y, s.z, 0, Math.PI*2); ctx.fill();
+                });
+                requestAnimationFrame(animateStars);
+            }
+            animateStars();
+        }
+
+        // LOADER
+        window.addEventListener('load', () => {
+            const tl = gsap.timeline();
+            tl.to("#loader-bar", { width: "100%", duration: 1.5, ease: "power2.inOut" })
+              .to("#loader-screen", { opacity: 0, duration: 0.5, onComplete: () => document.getElementById('loader-screen').style.display = 'none' })
+              .to("body", { opacity: 1, duration: 0.1 })
+              .to("#navbar", { y: 0, duration: 0.8, ease: "power3.out" })
+              .to("#hero-text", { opacity: 1, y: 0, duration: 1 }, "-=0.5")
+              .to("#hero-img", { opacity: 1, x: 0, duration: 1 }, "-=0.8");
+        });
+
+        const raceSound = document.getElementById('race-sound');
+        function playRaceSound() { raceSound.currentTime = 0; raceSound.volume = 0.5; raceSound.play(); }
+
+        function animateValue(id, start, end, duration) {
+            const obj = document.getElementById(id);
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerHTML = Math.floor(progress * (end - start) + start) + "%";
+                if (progress < 1) { window.requestAnimationFrame(step); }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        const projectData = [
+            { 
+                title: "FinAI Pro", tag: "DATA SCIENCE", percent: 98, dashoffset: 5,
+                steps: ["MARKET API", "ML MODEL", "PREDICTION", "DASHBOARD"],
+                code: "import pandas as pd\nimport numpy as np\nfrom sklearn.ensemble import RandomForestRegressor\n\n# Initialize Market Engine\nclass MarketPredictor:\n    def __init__(self, data_source):\n        self.df = pd.read_csv(data_source)\n        self.model = RandomForestRegressor(n_estimators=100)\n\n    def train(self):\n        X = self.df[['Open', 'High', 'Low', 'Volume']]\n        y = self.df['Close']\n        self.model.fit(X, y)\n        return 'Training Complete: 98% Accuracy'"
+            },
+            { 
+                title: "Ultimate IMS", tag: "AUTOMATION", percent: 92, dashoffset: 20,
+                steps: ["ADD SALES", "CALCULATE STOCK", "UPDATE SYSTEM", "ALERT ADMIN"],
+                code: "function onEdit(e) {\n  const sheet = e.source.getActiveSheet();\n  const range = e.range;\n  \n  // Check Stock Level\n  if (range.getColumn() == 4 && range.getValue() < 10) {\n    const productId = sheet.getRange(range.getRow(), 1).getValue();\n    GmailApp.sendEmail(\n      'admin@warehouse.com',\n      'CRITICAL ALERT',\n      'Restock needed for ID: ' + productId\n    );\n  }\n  updateDashboard(e.value);\n}"
+            },
+            { 
+                title: "Cinematic Web", tag: "WEBGL", percent: 100, dashoffset: 0,
+                steps: ["INIT THREE.JS", "LOAD GEOMETRY", "APPLY SHADER", "RENDER LOOP"],
+                code: "import * as THREE from 'three';\nimport { Canvas } from '@react-three/fiber';\n\nfunction Scene() {\n  const meshRef = useRef();\n  useFrame(() => {\n    meshRef.current.rotation.x += 0.01;\n    meshRef.current.rotation.y += 0.01;\n  });\n\n  return (\n    <mesh ref={meshRef}>\n      <torusKnotGeometry args={[10, 3, 100, 16]} />\n      <meshStandardMaterial color='#D90429' roughness={0.1} />\n    </mesh>\n  );\n}"
+            },
+            { 
+                title: "AI Agents", tag: "AI & LOGIC", percent: 88, dashoffset: 30,
+                steps: ["USER PROMPT", "LLM CONTEXT", "ACTION PLAN", "EXECUTION"],
+                code: "from langchain import OpenAI\nfrom langchain.agents import initialize_agent\n\n# Initialize Autonomous Agent\nllm = OpenAI(temperature=0)\nagent = initialize_agent(\n    tools, \n    llm, \n    agent='zero-shot-react-description', \n    verbose=True\n)\n\n# Execute Workflow\nresponse = agent.run('Book meeting with Client X for next Tuesday')"
+            },
+            { 
+                title: "Sales Predictor", tag: "ANALYTICS", percent: 95, dashoffset: 12,
+                steps: ["DATA INGEST", "CLEANING", "TREND ANALYSIS", "FORECAST"],
+                code: "SELECT product_id, SUM(sales) as total_revenue\nFROM transactions\nWHERE date > NOW() - INTERVAL 30 DAY\nGROUP BY product_id\nORDER BY total_revenue DESC;\n\n-- Running Predictive Algorithm...\n-- Confidence Score: 95%"
+            },
+            { 
+                title: "Payroll Hub", tag: "BUSINESS", percent: 99, dashoffset: 2,
+                steps: ["TRACK HOURS", "CALC TAX", "GENERATE SLIP", "EMAIL PDF"],
+                code: "=IF(C2='Present', VLOOKUP(A2, Rates!A:B, 2, FALSE), 0)\n\n// Tax Calculation Macro\nfunction calculateTax(grossSalary) {\n  const taxRate = 0.18;\n  return grossSalary * taxRate;\n}\n\n// Generate PDF Slip\nfunction createSlip(empId) {\n  const doc = DocumentApp.create('Slip_' + empId);\n  // ...\n}"
+            }
+        ];
+
+        function openModal(index) {
+            const data = projectData[index];
+            document.getElementById('modal-title').innerText = data.title;
+            document.getElementById('modal-tag').innerText = data.tag;
+            document.getElementById('modal-code').innerText = data.code;
+            
+            const flowContainer = document.getElementById('flowchart-container');
+            flowContainer.innerHTML = '';
+            data.steps.forEach(step => {
+                const div = document.createElement('div');
+                div.className = 'flow-cloud text-gray-300 border-white/20';
+                div.innerText = step;
+                flowContainer.appendChild(div);
+            });
+
+            animateValue("chart-text", 0, data.percent, 1500);
+            
+            const circle = document.getElementById('chart-circle');
+            circle.style.transition = 'none'; circle.style.strokeDashoffset = 251; circle.offsetHeight; 
+            setTimeout(() => {
+                circle.style.transition = "stroke-dashoffset 1.5s ease-out";
+                circle.style.strokeDashoffset = data.dashoffset;
+            }, 50);
+
+            const modal = document.getElementById('mission-modal');
+            modal.classList.remove('hidden');
+            gsap.fromTo(modal.children[1], { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5 });
+        }
+
+        function closeModal() { document.getElementById('mission-modal').classList.add('hidden'); }
+
+        const cursorDot = document.getElementById("cursor-dot");
+        const cursorCircle = document.getElementById("cursor-circle");
+        window.addEventListener("mousemove", (e) => {
+            gsap.to(cursorDot, { x: e.clientX, y: e.clientY, duration: 0.1 });
+            gsap.to(cursorCircle, { x: e.clientX, y: e.clientY, duration: 0.5, ease: "power2.out" });
+        });
+    </script>
+</body>
+</html>
